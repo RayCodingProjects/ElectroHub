@@ -9,7 +9,6 @@
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <a href="#" class="logo">
     <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -18,9 +17,7 @@
   <ul class="nav-links">
     <li><a href="#products">Products</a></li>
     <li><a href="#deals">Deals</a></li>
-    <li><a href="#reviews">Reviews</a></li>
     <li><a href="#">About</a></li>
-    <li><a href="#contact">Contact</a></li>
   </ul>
   <div class="nav-right">
     <button class="nav-btn" onclick="openSearch()" aria-label="Search">
@@ -38,16 +35,12 @@
   </div>
 </nav>
 
-<!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobileMenu">
   <a href="#products" onclick="toggleMenu()">Products</a>
   <a href="#deals"    onclick="toggleMenu()">Deals</a>
-  <a href="#reviews"  onclick="toggleMenu()">Reviews</a>
   <a href="#about"    onclick="toggleMenu()">About</a>
-  <a href="#contact"  onclick="toggleMenu()">Contact</a>
 </div>
 
-<!-- HERO -->
 <section class="hero">
   <div class="hero-bg"></div>
   <div class="orb orb1"></div>
@@ -71,7 +64,6 @@
   </div>
 </section>
 
-<!-- FEATURES STRIP -->
 <div class="features-strip">
   <div class="features-inner sg reveal">
     <div class="feat sg-c">
@@ -97,7 +89,11 @@
   </div>
 </div>
 
-<!-- PRODUCTS -->
+<div class="marquee-section">
+  <div class="mrow"><div class="mtrack"     id="mrow1"></div></div>
+  <div class="mrow"><div class="mtrack-rev" id="mrow2"></div></div>
+</div>
+
 <section id="products">
   <div class="products-wrap">
     <div class="products-head reveal">
@@ -123,7 +119,6 @@
   </div>
 </section>
 
-<!-- BANNER -->
 <section id="deals">
   <div class="banner reveal">
     <div class="banner-body">
@@ -139,65 +134,6 @@
   </div>
 </section>
 
-<!-- BRAND LOGO MARQUEE -->
-<div class="marquee-section">
-  <div class="mrow"><div class="mtrack"     id="mrow1"></div></div>
-  <div class="mrow"><div class="mtrack-rev" id="mrow2"></div></div>
-</div>
-
-<!-- REVIEWS -->
-<section id="reviews">
-  <div class="reviews-wrap reveal">
-    <div class="ctr">
-      <p class="tag">Customers</p>
-      <h2 class="stitle">Loved Worldwide</h2>
-      <p class="ssub">Over 2 million customers trust ElectroHub for their tech needs.</p>
-    </div>
-    <div class="rgrid" id="rgrid"></div>
-  </div>
-</section>
-
-<!-- NEWSLETTER -->
-<div class="nl reveal" id="about">
-  <p class="tag">Stay in the Loop</p>
-  <h2 class="stitle" style="font-size:clamp(28px,4vw,42px)">Drop-worthy deals,<br>first to your inbox.</h2>
-  <p class="ssub" style="margin:12px auto 0">No spam. No noise. Just the best tech drops, weekly.</p>
-  <div class="nl-form">
-    <input type="email" class="nl-input" placeholder="your@email.com"/>
-    <button class="btn btn-blue" onclick="subscribe()">Subscribe</button>
-  </div>
-</div>
-
-<!-- CONTACT -->
-<section id="contact">
-  <div class="contact-section reveal">
-    <p class="tag">Get in Touch</p>
-    <h2 class="stitle" style="font-size:clamp(28px,4vw,42px)">We're here<br>to help.</h2>
-    <p class="ssub" style="margin:12px auto 0">Reach us on WhatsApp or email — we reply fast.</p>
-    <div class="contact-cards">
-      <a href="https://wa.me/96170599658" target="_blank" class="contact-card whatsapp">
-        <div class="contact-icon wa-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-        </div>
-        <div>
-          <p class="contact-label">WhatsApp</p>
-          <p class="contact-value">+961 70 599 568</p>
-        </div>
-      </a>
-      <a href="mailto:williamsouaid85@gmail.com" class="contact-card email">
-        <div class="contact-icon em-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-        </div>
-        <div>
-          <p class="contact-label">Email</p>
-          <p class="contact-value">williamsouaid85@gmail.com</p>
-        </div>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
 <footer>
   <div class="footer-in">
     <div class="footer-top">
@@ -206,7 +142,7 @@
         <p>Your destination for premium electronics. Curated for the bold. Built for the future.</p>
       </div>
       <div class="f-col"><h4>Shop</h4><ul><li><a href="#">New Arrivals</a></li><li><a href="#">Best Sellers</a></li><li><a href="#deals">Deals</a></li></ul></div>
-      <div class="f-col"><h4>Support</h4><ul><li><a href="#">Help Center</a></li><a href="#contact">Contact Us</a></li></ul></div>
+      <div class="f-col"><h4>Support</h4><ul><li><a href="#">Help Center</a></li></ul></div>
       <div class="f-col"><h4>Company</h4><ul><li><a href="#">About</a></li></ul></div>
     </div>
     <div class="footer-bot">
@@ -220,7 +156,6 @@
   </div>
 </footer>
 
-<!-- CART DRAWER -->
 <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
 <div class="cart-drawer" id="cartDrawer">
   <div class="cart-hd">
@@ -236,7 +171,6 @@
   </div>
 </div>
 
-<!-- RATING MODAL -->
 <div class="rating-overlay" id="ratingOverlay">
   <div class="rating-modal" id="ratingModal" role="dialog" aria-modal="true">
     <div class="rating-handle"></div>
@@ -278,7 +212,6 @@
   </div>
 </div>
 
-<!-- PROCESSING OVERLAY -->
 <div class="proc-overlay" id="procOverlay">
   <div class="proc-icon">
     <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -294,31 +227,13 @@
   <p class="proc-status" id="procStatus">Processing<span class="proc-dots"><span>.</span><span>.</span><span>.</span></span></p>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"><span class="toast-dot"></span><span id="toastMsg"></span></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-/* ══════════════════════════════════════════════
-   ↓↓↓  PASTE YOUR GOOGLE SHEETS CSV URL HERE  ↓↓↓
-   ══════════════════════════════════════════════
-   1. Open your Google Sheet
-   2. File → Share → Publish to web
-   3. Choose Sheet1 + CSV → Publish
-   4. Copy the URL and replace the string below
-   ══════════════════════════════════════════════ */
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQiZcHHtaRJa7Isj_5cvl96lWOMLXQZJLrpNCxGbt0TmD79A2wCNXZv2RDN5igXiciSSSIhnz7l6AAT/pub?gid=0&single=true&output=csv';
 
 /* ── DATA ── */
 let PRODUCTS = [];
-
-const REVIEWS = [
-  { name:'Alex R.',   ini:'AR', text:'Unreal build quality and the shipping was incredibly fast. My MacBook arrived next day — perfectly packaged.',           meta:'Verified Buyer · MacBook Pro' },
-  { name:'Priya S.',  ini:'PS', text:'ElectroHub has the cleanest checkout I\'ve ever used. Got my AirPods in 2 days, completely flawless.',                   meta:'Verified Buyer · AirPods Pro 2' },
-  { name:'Marcus L.', ini:'ML', text:'Prices are great, selection is massive, and their support team resolved my issue in under 20 minutes.',                  meta:'Verified Buyer · iPhone 16 Pro' },
-  { name:'Yuki T.',   ini:'YT', text:'I\'ve been shopping here for 3 years. Never a single issue. The warranty service is genuinely world-class.',             meta:'Verified Buyer · Apple Watch Ultra' },
-  { name:'Dana M.',   ini:'DM', text:'The product pages are so detailed — I knew exactly what I was getting. No surprises whatsoever. Just a perfect purchase.',meta:'Verified Buyer · Sony WH-1000XM6' },
-  { name:'Cam F.',    ini:'CF', text:'Returned an item with zero friction. They sent a replacement before they even received the first one back. Wild.',        meta:'Verified Buyer · iPad Pro' },
-];
 
 const BRANDS = [
   { name:'Apple',    color:'#f5f5f7', icon:'M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z' },
@@ -343,7 +258,6 @@ async function loadProducts() {
     const rows = text.trim().split('\n');
     const keys = rows[0].split(',').map(k => k.trim().replace(/^"|"$/g, ''));
     PRODUCTS = rows.slice(1).map((row, i) => {
-      // Handle commas inside quoted fields
       const vals = [];
       let cur = '', inQ = false;
       for (let c of row) {
@@ -369,7 +283,7 @@ async function loadProducts() {
 function renderProducts(filter) {
   const list = filter === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.cat === filter);
   if (!list.length) {
-    document.getElementById('pgrid').innerHTML = `<p style="color:var(--g5);grid-column:1/-1;text-align:center;padding:40px 0">No products found. Check your Google Sheets URL.</p>`;
+    document.getElementById('pgrid').innerHTML = `<p style="color:var(--g5);grid-column:1/-1;text-align:center;padding:40px 0">No products found.</p>`;
     return;
   }
   document.getElementById('pgrid').innerHTML = list.map((p,i) => `
@@ -420,21 +334,6 @@ function renderMarquee() {
   const set2 = [...BRANDS.slice(3), ...BRANDS.slice(0,3), ...BRANDS.slice(3), ...BRANDS.slice(0,3)].map(makePill).join('');
   document.getElementById('mrow1').innerHTML = set1;
   document.getElementById('mrow2').innerHTML = set2;
-}
-
-/* ── REVIEWS ── */
-function renderReviews() {
-  const star = '<svg class="star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-  document.getElementById('rgrid').innerHTML = REVIEWS.map((r,i) => `
-    <div class="rcard reveal" style="transition-delay:${i*.08}s">
-      <div class="stars">${star.repeat(5)}</div>
-      <p class="rtext">"${r.text}"</p>
-      <div class="reviewer">
-        <div class="rav">${r.ini}</div>
-        <div><p class="rname">${r.name}</p><p class="rmeta">${r.meta}</p></div>
-      </div>
-    </div>`).join('');
-  observeReveal();
 }
 
 /* ── CART LOGIC ── */
@@ -496,11 +395,6 @@ function toggleMenu() {
     : '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
 }
 function openSearch() { toast('Search coming soon!'); }
-function subscribe() {
-  const el = document.querySelector('.nl-input');
-  if (!el.value.includes('@')) { toast('Please enter a valid email'); return; }
-  toast('You\'re subscribed! 🎉'); el.value = '';
-}
 
 /* ── CHECKOUT via WHATSAPP ── */
 const WHATSAPP_NUMBER = '96170599658';
@@ -581,20 +475,13 @@ function setRating(val) {
   document.getElementById('ratingSubmit').disabled = false;
 }
 function submitRating() {
-  // 1. Slide the sheet down
   document.getElementById('ratingOverlay').classList.remove('open');
-
-  // 2. Fade in the processing overlay
   const proc = document.getElementById('procOverlay');
   setTimeout(() => proc.classList.add('show'), 300);
-
-  // 3. After ~1.4s: mark as done — spinner stops, tick draws, text goes green
   setTimeout(() => {
     proc.classList.add('done');
     document.getElementById('procStatus').innerHTML = 'Submitted ✓';
   }, 1700);
-
-  // 4. After ~2.6s: fade out processing, show thank-you in sheet
   setTimeout(() => {
     proc.style.transition = 'opacity .35s ease';
     proc.style.opacity = '0';
@@ -604,51 +491,31 @@ function submitRating() {
       proc.style.transition = '';
       document.getElementById('procStatus').innerHTML =
         'Processing<span class="proc-dots"><span>.</span><span>.</span><span>.</span></span>';
-
       document.getElementById('ratingForm').style.display = 'none';
       document.getElementById('ratingThanks').style.display = 'flex';
       document.getElementById('ratingOverlay').classList.add('open');
-
       setTimeout(closeRating, 2000);
     }, 380);
   }, 2600);
 }
 
-/* ── EXIT-INTENT ──
-   Only fires after the user has been on the page for at least 4 seconds
-   (prevents triggering on accidental page open / back navigation).
-   Three signals catch every possible close gesture.
-*/
 const shouldShowRating = true;
 const pageOpenTime = Date.now();
-const MIN_TIME_MS = 4000; // must have been on page at least 4s
+const MIN_TIME_MS = 4000;
 
 function maybeOpenRating() {
   if (!shouldShowRating || ratingShown) return;
   if (Date.now() - pageOpenTime < MIN_TIME_MS) return;
   openRating();
 }
-
-// Signal 1 — mouse exits toward top of viewport (desktop)
-document.addEventListener('mouseleave', ev => {
-  if (ev.clientY <= 4) maybeOpenRating();
-}, { once: true });
-
-// Signal 2 — tab hidden / app backgrounded / window closed (all platforms incl. mobile)
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') maybeOpenRating();
-}, { once: true });
-
-// Signal 3 — navigating away / refresh / Cmd+W / Alt+F4
-window.addEventListener('beforeunload', () => {
-  maybeOpenRating();
-}, { once: true });
+document.addEventListener('mouseleave', ev => { if (ev.clientY <= 4) maybeOpenRating(); }, { once: true });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') maybeOpenRating(); }, { once: true });
+window.addEventListener('beforeunload', () => { maybeOpenRating(); }, { once: true });
 
 (async () => {
   await loadProducts();
   renderProducts('all');
   renderMarquee();
-  renderReviews();
   observeReveal();
 })();
 </script>
