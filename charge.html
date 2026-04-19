@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+  <title>ChargeLB</title>
+  <link rel="preconnect" href="https://a.basemaps.cartocdn.com"/>
+  <link rel="preconnect" href="https://b.basemaps.cartocdn.com"/>
+  <link rel="preconnect" href="https://c.basemaps.cartocdn.com"/>
+  <link rel="preconnect" href="https://d.basemaps.cartocdn.com"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+
+  <style>
+    /* ── Reset ── */
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+    html,body{width:100%;height:100%;overflow:hidden;background:#000;
+      font-family:-apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',sans-serif;
+      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+    #map{width:100%;height:100%;background:#080808}
+    .leaflet-control-zoom,.leaflet-control-attribution,.leaflet-control-container{display:none!important}
+
+    /* ══════════════════════════════════
+       SEARCH BAR
+    ══════════════════════════════════ */
+    /* base pill styles (position handled by .search-row) */
+    .map-search{
+      height:46px;
+      background:rgba(26,26,28,0.78);
+      backdrop-filter:saturate(200%) blur(32px);
+      -webkit-backdrop-filter:saturate(200%) blur(32px);
+      border-radius:23px;
+      border:0.5px solid rgba(255,255,255,0.09);
+      box-shadow:0 0 0 0.5px rgba(255,255,255,0.06) inset,0 6px 28px rgba(0,0,0,0.6);
+      display:flex;align-items:center;padding:0 14px;gap:9px;cursor:text;
+      transition:box-shadow 0.25s,border-color 0.25s;
+    }
+    @keyframes fadeDown{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .map-search-icon{flex-shrink:0;opacity:0.3}
+    .map-search-text{display:none}
+    .map-search-mic{flex-shrink:0;opacity:0.65;cursor:pointer;transition:opacity 0.2s,transform 0.15s cubic-bezier(0.34,1.56,0.64,1);background:none;border:none;padding:2px;display:flex;align-items:center}
+    .map-search-mic:hover{opacity:1}
+    .map-search-mic:active{transform:scale(0.88)}
+
+    /* ── Search row wrapper ── */
+    .search-row{
+      position:fixed;
+      top:max(20px,env(safe-area-inset-top,20px));
+      left:50%;transform:translateX(-50%);
+      z-index:500;
+      display:flex;align-items:center;
+      gap:0;
+      width:min(340px,calc(100vw - 32px));
+      transition:width 0.38s cubic-bezier(0.32,0.72,0,1);
+      animation:fadeDown 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .search-row.active{
+      width:min(420px,calc(100vw - 32px));
+    }
+
+    /* ── Search pill ── */
+    .map-search{
+      flex:1;min-width:0;
+      /* override position:fixed from old style */
+      position:relative;top:auto;left:auto;transform:none;
+      width:100%;
+      transition:border-color 0.2s;
+    }
+    .map-search.active{
+      border-color:rgba(255,255,255,0.18);
+      box-shadow:0 0 0 3px rgba(10,132,255,0.22),0 0 0 0.5px rgba(255,255,255,0.06) inset,0 6px 28px rgba(0,0,0,0.6);
+    }
+
+    /* ── Real input field ── */
+    .search-input{
+      flex:1;min-width:0;
+      background:none;border:none;outline:none;
+      font-size:15px;color:#fff;letter-spacing:-0.2px;
+      font-family:-apple-system,'SF Pro Text',sans-serif;
+      -webkit-font-smoothing:antialiased;
+      caret-color:#0a84ff;
+    }
+    .search-input::placeholder{color:rgba(255,255,255,0.32)}
+    .search-input::-webkit-search-cancel-button{display:none}
+
+    /* ── Clear × button ── */
+    .search-clear{
+      display:none;background:none;border:none;cursor:pointer;
+      padding:2px;flex-shrink:0;opacity:0.7;
+      transition:opacity 0.15s,transform 0.15s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .search-clear:hover{opacity:1}
+    .search-clear:active{transform:scale(0.85)}
+    .search-clear.visible{display:flex}
+
+    /* ── Cancel text button ── */
+    .search-cancel{
+      flex-shrink:0;
+      background:none;border:none;cursor:pointer;
+      font-size:15px;font-weight:400;color:#0a84ff;
+      font-family:-apple-system,'SF Pro Text',sans-serif;
+      letter-spacing:-0.1px;
+      padding:0 0 0 10px;
+      white-space:nowrap;
+      max-width:0;overflow:hidden;opacity:0;
+      transition:max-width 0.38s cubic-bezier(0.32,0.72,0,1),opacity 0.28s ease,padding 0.38s;
+    }
+    .search-row.active .search-cancel{
+      max-width:72px;opacity:1;padding:0 0 0 10px;
+    }
+
+    /* ══════════════════════════════════
+       LOW POWER MODE ALERT (Apple-exact)
+       Centered on screen, spring-in,
+       matches iOS 17 system alert design
+    ══════════════════════════════════ */
+    .lpm-scrim{
+      position:fixed;inset:0;z-index:2000;
+      background:rgba(0,0,0,0);
+      display:flex;align-items:center;justify-content:center;
+      pointer-events:none;
+      transition:background 0.3s ease;
+    }
+    .lpm-scrim.active{
+      background:rgba(0,0,0,0.48);
+      pointer-events:all;
+    }
+
+    /* Alert card */
+    .lpm-alert{
+      width:270px;
+      background:rgba(30,30,32,0.97);
+      backdrop-filter:saturate(200%) blur(52px);
+      -webkit-backdrop-filter:saturate(200%) blur(52px);
+      border-radius:14px;
+      border:0.5px solid rgba(255,255,255,0.14);
+      box-shadow:
+        0 28px 60px rgba(0,0,0,0.75),
+        0 0 0 0.5px rgba(255,255,255,0.06) inset;
+      overflow:hidden;
+      opacity:0;
+      transform:scale(0.88);
+      transition:
+        opacity  0.28s cubic-bezier(0.22,1,0.36,1),
+        transform 0.36s cubic-bezier(0.34,1.32,0.64,1);
+    }
+    .lpm-scrim.active .lpm-alert{
+      opacity:1;
+      transform:scale(1);
+    }
+
+    /* Body area */
+    .lpm-body{
+      padding:20px 16px 16px;
+      display:flex;flex-direction:column;align-items:center;gap:10px;
+    }
+
+    /* Battery icon — replaced with Apple-style red X circle */
+    .lpm-battery{
+      width:44px;height:44px;margin-bottom:2px;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+    }
+    .lpm-x-circle{
+      width:44px;height:44px;border-radius:50%;
+      background:rgba(255,59,48,0.16);
+      border:0.5px solid rgba(255,59,48,0.28);
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    /* Title */
+    .lpm-title{
+      font-size:17px;font-weight:700;color:#fff;
+      letter-spacing:-0.4px;text-align:center;line-height:1.3;
+    }
+    /* Body text */
+    .lpm-message{
+      font-size:13px;font-weight:400;
+      color:rgba(255,255,255,0.7);
+      text-align:center;line-height:1.5;letter-spacing:-0.1px;
+    }
+
+    /* Divider before button row */
+    .lpm-divider{
+      height:0.5px;background:rgba(255,255,255,0.12);
+      width:100%;
+    }
+
+    /* Button row — single "OK" button, iOS style */
+    .lpm-btn{
+      display:block;width:100%;
+      padding:12px 0;
+      background:none;border:none;
+      font-size:17px;font-weight:600;color:#0a84ff;
+      font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;
+      letter-spacing:-0.3px;text-align:center;cursor:pointer;
+      transition:background 0.1s;
+    }
+    .lpm-btn:hover{background:rgba(255,255,255,0.04)}
+    .lpm-btn:active{background:rgba(255,255,255,0.08)}
+
+    /* ══════════════════════════════════
+       RECENTER BUTTON
+    ══════════════════════════════════ */
+    .map-btn-recenter{
+      position:fixed;bottom:30px;right:18px;z-index:600;
+      width:44px;height:44px;border-radius:50%;border:none;
+      background:rgba(26,26,28,0.78);
+      backdrop-filter:saturate(200%) blur(32px);
+      -webkit-backdrop-filter:saturate(200%) blur(32px);
+      border:0.5px solid rgba(255,255,255,0.09);
+      box-shadow:0 6px 22px rgba(0,0,0,0.55);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1),opacity 0.15s,box-shadow 0.2s;
+      animation:fadeUp 0.5s 0.1s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .map-btn-recenter:hover{box-shadow:0 8px 28px rgba(0,0,0,0.7)}
+    .map-btn-recenter:active{transform:scale(0.88);opacity:0.72}
+    .map-btn-recenter.spinning svg{animation:spin-once 0.6s cubic-bezier(0.22,1,0.36,1) forwards}
+    @keyframes spin-once{to{transform:rotate(360deg)}}
+
+    /* ══════════════════════════════════
+       MAP PIN
+    ══════════════════════════════════ */
+    .dest-pin{
+      position:relative;width:22px;height:31px;cursor:pointer;
+      filter:drop-shadow(0 1px 3px rgba(0,0,0,0.38));
+      transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .dest-pin:hover{transform:translateY(-2px)}
+    .dest-pin-body{
+      position:absolute;top:0;left:50%;width:20px;height:20px;background:#0a84ff;
+      border-radius:50% 50% 50% 0;transform:translateX(-50%) rotate(-45deg);
+      transition:transform 0.24s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .dest-pin-ring{
+      position:absolute;top:0;left:50%;width:20px;height:20px;
+      border-radius:50% 50% 50% 0;border:0.5px solid rgba(255,255,255,0.18);
+      transform:translateX(-50%) rotate(-45deg);pointer-events:none
+    }
+    .dest-pin-inner{
+      position:absolute;top:5px;left:50%;transform:translateX(-50%);
+      width:10px;height:10px;background:#fff;border-radius:50%;z-index:1;
+    }
+    .dest-pin-bolt{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:2;width:6px;height:8px}
+    .dest-pin-tip{
+      position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+      width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:6px solid #0a84ff
+    }
+    .dest-pin-shadow{
+      position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+      width:9px;height:3px;background:rgba(0,0,0,0.15);border-radius:50%;filter:blur(2px)
+    }
+    .dest-pin.tapped .dest-pin-body{transform:translateX(-50%) rotate(-45deg) scale(0.80)}
+    .dest-pin-ping{display:none}
+
+    /* ══════════════════════════════════
+       BOTTOM SHEET
+    ══════════════════════════════════ */
+    .sheet{
+      position:fixed;
+      bottom:max(env(safe-area-inset-bottom,20px),20px);
+      left:50%;
+      transform:translateX(-50%) translateY(calc(100% + 64px));
+      width:min(375px,calc(100vw - 20px));
+      z-index:900;
+      transition:transform 0.58s cubic-bezier(0.32,0.72,0,1);
+      will-change:transform;
+      pointer-events:none;
+    }
+    .sheet.open{transform:translateX(-50%) translateY(0);pointer-events:all}
+    .sheet.dragging{transition:none}
+
+    /* ── Glass card ── */
+    .card{
+      background:rgba(13,13,15,0.97);
+      backdrop-filter:saturate(220%) blur(56px);
+      -webkit-backdrop-filter:saturate(220%) blur(56px);
+      border-radius:28px;
+      border:0.5px solid rgba(255,255,255,0.11);
+      box-shadow:
+        0 0 0 0.5px rgba(255,255,255,0.05) inset,
+        0 32px 80px rgba(0,0,0,0.9),
+        0 6px 20px rgba(0,0,0,0.7);
+      overflow:hidden;
+      position:relative;
+    }
+
+    /* Side fade vignettes — pure Apple */
+    .card-vignette-l,.card-vignette-r{
+      position:absolute;top:0;bottom:0;width:52px;z-index:50;pointer-events:none;
+    }
+    .card-vignette-l{left:0;background:linear-gradient(90deg,rgba(10,10,12,0.88) 0%,transparent 100%)}
+    .card-vignette-r{right:0;background:linear-gradient(270deg,rgba(10,10,12,0.88) 0%,transparent 100%)}
+
+    /* ── Handle ── */
+    .card-handle{
+      display:flex;justify-content:center;padding:12px 0 6px;cursor:grab;
+      position:relative;z-index:60;
+    }
+    .card-handle:active{cursor:grabbing}
+    .card-handle-bar{
+      width:34px;height:4px;border-radius:2.5px;
+      background:rgba(255,255,255,0.16);
+      transition:width 0.24s cubic-bezier(0.22,1,0.36,1),background 0.2s;
+    }
+    .card-handle:hover .card-handle-bar{width:46px;background:rgba(255,255,255,0.28)}
+
+    /* ══════════════════════════════════════════════
+       LOADER — iOS UIActivityIndicatorView
+       12 spokes at 30° intervals. Each spoke fades
+       from full opacity to near-zero over one cycle.
+       Staggered delays create the rotating sweep.
+       The "head" spoke is always at 12 o'clock.
+       No ring, no check, no label — pure spinner.
+    ══════════════════════════════════════════════ */
+    .faceid-wrap{
+      position:absolute;inset:0;z-index:200;
+      background:rgba(13,13,15,0.98);
+      border-radius:28px;
+      display:flex;align-items:center;justify-content:center;
+      transition:opacity 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    .faceid-wrap.done{opacity:0;pointer-events:none}
+
+    /* Wheel — sized so spokes sit on a natural radius */
+    .loader-wheel{
+      position:relative;
+      width:40px;height:40px;
+    }
+
+    /*
+      Each spoke:
+        - 3 × 9 px rounded pill
+        - centered horizontally on the wheel's midpoint
+        - transform-origin at the exact centre of the wheel
+          = translateY(-(r + halfHeight)) where r=11 (inner gap), h=9
+          so origin offset = -(11 + 4.5) = -15.5 px from the spoke's top
+        - We position top:50%, marginTop = -halfHeight = -4.5px
+          so the spoke is centred vertically; origin then becomes
+          top-edge of spoke from wheel-centre = 20 - 4.5 = 15.5 px down
+          → origin 50% / -(15.5) from spoke top places pivot at wheel centre
+    */
+    .loader-wheel .s{
+      position:absolute;
+      top:50%;left:50%;
+      width:3px;height:9px;
+      margin-top:-4.5px;
+      margin-left:-1.5px;
+      border-radius:1.5px;
+      background:#fff;
+      transform-origin:50% -11px;   /* 11 px inner gap → pivot at wheel centre */
+      opacity:0.12;
+      animation:ios-spoke 1.2s linear infinite;
+      will-change:opacity;
+    }
+
+    /* Rotation: spoke n sits at n×30° */
+    .s:nth-child(1) {transform:rotate(  0deg);animation-delay: 0s}
+    .s:nth-child(2) {transform:rotate( 30deg);animation-delay:-1.1s}
+    .s:nth-child(3) {transform:rotate( 60deg);animation-delay:-1.0s}
+    .s:nth-child(4) {transform:rotate( 90deg);animation-delay:-0.9s}
+    .s:nth-child(5) {transform:rotate(120deg);animation-delay:-0.8s}
+    .s:nth-child(6) {transform:rotate(150deg);animation-delay:-0.7s}
+    .s:nth-child(7) {transform:rotate(180deg);animation-delay:-0.6s}
+    .s:nth-child(8) {transform:rotate(210deg);animation-delay:-0.5s}
+    .s:nth-child(9) {transform:rotate(240deg);animation-delay:-0.4s}
+    .s:nth-child(10){transform:rotate(270deg);animation-delay:-0.3s}
+    .s:nth-child(11){transform:rotate(300deg);animation-delay:-0.2s}
+    .s:nth-child(12){transform:rotate(330deg);animation-delay:-0.1s}
+
+    /*
+      Full opacity at t=0, linearly decaying to the dim floor by t=100%.
+      This matches exactly how UIKit renders it — no ease curves on opacity,
+      strictly linear so each step feels mechanical and precise.
+    */
+    @keyframes ios-spoke{
+      0%  { opacity:1    }
+      100%{ opacity:0.12 }
+    }
+
+    /* ══════════════════════════════════
+       CAR IMAGE STAGE
+    ══════════════════════════════════ */
+    .car-stage{
+      height:162px;width:100%;position:relative;overflow:hidden;
+    }
+    .car-img{
+      width:100%;height:100%;object-fit:contain;object-position:center;
+      display:block;
+      opacity:0;transform:scale(0.94) translateY(6px);
+      transition:opacity 0.5s cubic-bezier(0.22,1,0.36,1),transform 0.6s cubic-bezier(0.22,1,0.36,1);
+      /* placeholder — user replaces src */
+    }
+    .car-img.visible{opacity:1;transform:scale(1) translateY(0)}
+
+    /* car placeholder (shown before image loads) */
+    .car-placeholder{
+      position:absolute;inset:0;
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    /* bottom gradient on car */
+    .car-fade{
+      position:absolute;bottom:0;left:0;right:0;height:48px;
+      background:linear-gradient(transparent,rgba(13,13,15,0.95));
+      pointer-events:none;z-index:5;
+    }
+
+    /* ══════════════════════════════════
+       CARD CONTENT
+    ══════════════════════════════════ */
+
+    /* Identity row */
+    .card-identity{
+      display:flex;align-items:flex-start;justify-content:space-between;
+      padding:2px 20px 0;position:relative;z-index:60;
+      opacity:0;transform:translateY(9px);
+      transition:opacity 0.32s ease,transform 0.42s cubic-bezier(0.22,1,0.36,1);
+    }
+    .card-identity.reveal{opacity:1;transform:translateY(0)}
+    .card-name{font-size:17px;font-weight:700;color:#fff;letter-spacing:-0.5px;line-height:1.25}
+    .card-addr{
+      font-size:12px;color:rgba(255,255,255,0.36);margin-top:3px;letter-spacing:-0.1px;
+      display:flex;align-items:center;gap:4px;
+    }
+    .addr-dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.2)}
+
+    /* Hairline */
+    .card-line{
+      height:0.5px;background:rgba(255,255,255,0.065);
+      margin:13px 20px 0;position:relative;z-index:60;
+      opacity:0;transition:opacity 0.28s ease;
+    }
+    .card-line.reveal{opacity:1}
+
+    /* Status */
+    .card-status{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 20px 0;position:relative;z-index:60;
+      opacity:0;transform:translateY(6px);
+      transition:opacity 0.3s ease,transform 0.38s cubic-bezier(0.22,1,0.36,1);
+    }
+    .card-status.reveal{opacity:1;transform:translateY(0)}
+    .status-pill{
+      display:flex;align-items:center;gap:5px;
+      background:rgba(48,209,88,0.1);border:0.5px solid rgba(48,209,88,0.2);
+      border-radius:20px;padding:4px 11px;
+    }
+    .status-dot{
+      width:5px;height:5px;border-radius:50%;background:#30d158;
+      box-shadow:0 0 6px rgba(48,209,88,0.95);
+      animation:dot-breathe 2.6s ease-in-out infinite;
+    }
+    @keyframes dot-breathe{
+      0%,100%{box-shadow:0 0 4px rgba(48,209,88,0.7)}
+      50%{box-shadow:0 0 10px rgba(48,209,88,1),0 0 20px rgba(48,209,88,0.3)}
+    }
+    .status-txt{font-size:11px;font-weight:600;color:#30d158;letter-spacing:-0.1px}
+    .status-ports{font-size:11px;color:rgba(255,255,255,0.28);letter-spacing:-0.2px}
+
+    /* Info rows */
+    .card-rows{
+      display:flex;flex-direction:column;
+      padding:8px 20px 0;position:relative;z-index:60;
+      opacity:0;transform:translateY(6px);
+      transition:opacity 0.3s ease,transform 0.38s cubic-bezier(0.22,1,0.36,1);
+    }
+    .card-rows.reveal{opacity:1;transform:translateY(0)}
+    .card-row{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:9px 0;border-bottom:0.5px solid rgba(255,255,255,0.05);
+    }
+    .card-row:last-child{border-bottom:none}
+    .row-label{font-size:13px;color:rgba(255,255,255,0.36);font-weight:400;letter-spacing:-0.15px}
+    .row-val{font-size:13px;font-weight:600;color:#fff;letter-spacing:-0.2px}
+    .row-val.green{color:#30d158}
+    .row-val.blue{color:#0a84ff}
+
+    /* CTA */
+    .card-cta{
+      padding:13px 20px 20px;position:relative;z-index:60;
+      opacity:0;transform:translateY(6px);
+      transition:opacity 0.3s ease,transform 0.38s cubic-bezier(0.22,1,0.36,1);
+    }
+    .card-cta.reveal{opacity:1;transform:translateY(0)}
+
+    .btn-directions{
+      width:100%;
+      background:none;border:none;border-radius:14px;
+      padding:0;min-height:50px;
+      display:block;
+      cursor:pointer;
+      -webkit-user-select:none;user-select:none;
+      position:relative;overflow:hidden;
+      transition:opacity 0.14s,transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .btn-directions:hover{opacity:0.88}
+    .btn-directions:active{transform:scale(0.97);opacity:0.8}
+
+    .gmaps-logo{width:18px;height:18px;flex-shrink:0;border-radius:4px}
+
+    /* Blue background under directions button image */
+    .btn-directions{
+      background:#0a84ff !important;
+      border-radius:14px;
+      box-shadow:0 4px 18px rgba(10,132,255,0.4);
+    }
+
+
+
+    /* Directions button image */
+    .btn-directions-img{
+      width:100%;height:100%;
+      object-fit:contain;
+      display:block;
+      border-radius:14px;
+      pointer-events:none;
+    }
+    /* When image is absent, button shows a subtle placeholder */
+    .btn-directions:not(:has(img[src]:not([src=""]))){
+      min-height:50px;
+    }
+    /* ══════════════════════════════════
+       GPS LOCATION BUTTON
+       Sits above recenter. Three states:
+       idle  → arrow outline, white
+       locating → spinning spokes
+       active → arrow filled, blue
+    ══════════════════════════════════ */
+    .map-btn-gps{
+      position:fixed;bottom:86px;right:18px;z-index:600;
+      width:44px;height:44px;border-radius:50%;border:none;
+      background:rgba(26,26,28,0.82);
+      backdrop-filter:saturate(200%) blur(32px);
+      -webkit-backdrop-filter:saturate(200%) blur(32px);
+      border:0.5px solid rgba(255,255,255,0.09);
+      box-shadow:0 6px 22px rgba(0,0,0,0.55);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                 opacity 0.15s, box-shadow 0.2s, background 0.2s;
+      animation:fadeUp 0.5s 0.15s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .map-btn-gps:hover{box-shadow:0 8px 28px rgba(0,0,0,0.7)}
+    .map-btn-gps:active{transform:scale(0.88);opacity:0.72}
+
+    /* Active (have location) — button glows blue */
+    .map-btn-gps.gps-active{
+      background:rgba(10,132,255,0.18);
+      border-color:rgba(10,132,255,0.35);
+    }
+
+    /* Arrow icon — changes colour via CSS class */
+    .gps-btn-arrow{transition:opacity 0.2s}
+    .map-btn-gps.gps-active .gps-btn-arrow path{fill:#0a84ff}
+
+    /* Locating spinner — 8-spoke mini wheel inside button */
+    .gps-btn-spinner{
+      position:absolute;
+      width:20px;height:20px;
+      display:none;
+    }
+    .map-btn-gps.gps-locating .gps-btn-arrow{opacity:0}
+    .map-btn-gps.gps-locating .gps-btn-spinner{display:block}
+
+    .gps-btn-spinner .ss{
+      position:absolute;
+      top:50%;left:50%;
+      width:2px;height:6px;
+      margin-top:-3px;margin-left:-1px;
+      border-radius:1px;
+      background:#fff;
+      transform-origin:50% -5px;
+      opacity:0.12;
+      animation:ios-spoke 1.0s linear infinite;
+    }
+    .ss:nth-child(1){transform:rotate(  0deg);animation-delay:  0s}
+    .ss:nth-child(2){transform:rotate( 45deg);animation-delay:-0.875s}
+    .ss:nth-child(3){transform:rotate( 90deg);animation-delay:-0.750s}
+    .ss:nth-child(4){transform:rotate(135deg);animation-delay:-0.625s}
+    .ss:nth-child(5){transform:rotate(180deg);animation-delay:-0.500s}
+    .ss:nth-child(6){transform:rotate(225deg);animation-delay:-0.375s}
+    .ss:nth-child(7){transform:rotate(270deg);animation-delay:-0.250s}
+    .ss:nth-child(8){transform:rotate(315deg);animation-delay:-0.125s}
+
+    /* ══════════════════════════════════
+       GPS USER LOCATION DOT — reworked
+    ══════════════════════════════════ */
+    .gps-wrap{
+      position:relative;
+      width:22px;height:22px;
+    }
+
+    /* Accuracy circle drawn by Leaflet L.circle — no CSS needed */
+
+    /* Heading cone — sits BEHIND the puck, points in travel direction */
+    .gps-heading{
+      position:absolute;
+      left:50%;top:50%;
+      width:0;height:0;
+      border-left:8px solid transparent;
+      border-right:8px solid transparent;
+      border-bottom:24px solid rgba(10,132,255,0.30);
+      margin-left:-8px;
+      margin-top:-24px;
+      transform-origin:8px 24px; /* base-centre = dot centre */
+      filter:blur(1.5px);
+      pointer-events:none;
+    }
+
+    /* White ring */
+    .gps-ring{
+      position:absolute;inset:-2px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow:0 1px 5px rgba(0,0,0,0.4),0 0 0 0.5px rgba(0,0,0,0.08);
+    }
+
+    /* Blue core */
+    .gps-dot{
+      position:absolute;inset:2px;
+      border-radius:50%;
+      background:#0a84ff;
+    }
+
+    /* Pulse halo — stops after first fix */
+    .gps-pulse{
+      position:absolute;
+      top:50%;left:50%;
+      width:22px;height:22px;
+      margin:-11px 0 0 -11px;
+      border-radius:50%;
+      background:rgba(10,132,255,0.4);
+      animation:gps-halo 2s ease-out infinite;
+      pointer-events:none;
+    }
+    .gps-pulse.done{animation:none;opacity:0}
+    @keyframes gps-halo{
+      0%  {transform:scale(1);opacity:0.7}
+      100%{transform:scale(3.5);opacity:0}
+    }
+
+    /* GPS error / status toast */
+    .gps-toast{
+      position:fixed;
+      bottom:max(env(safe-area-inset-bottom,20px),20px);
+      left:50%;
+      z-index:1500;
+      background:rgba(28,28,30,0.94);
+      backdrop-filter:blur(28px);
+      -webkit-backdrop-filter:blur(28px);
+      border:0.5px solid rgba(255,255,255,0.1);
+      border-radius:14px;
+      padding:10px 18px;
+      font-size:13px;font-weight:500;
+      color:rgba(255,255,255,0.82);
+      letter-spacing:-0.1px;
+      white-space:nowrap;
+      box-shadow:0 8px 24px rgba(0,0,0,0.5);
+      opacity:0;pointer-events:none;
+      transform:translateX(-50%) translateY(12px);
+      transition:opacity 0.28s cubic-bezier(0.22,1,0.36,1),
+                 transform 0.32s cubic-bezier(0.22,1,0.36,1);
+    }
+    .gps-toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Screen-edge vignette — four gradient edges that frame the map -->
+<div style="
+  position:fixed;inset:0;z-index:400;
+  pointer-events:none;
+  background:
+    linear-gradient(to bottom,  rgba(0,0,0,0.18) 0%, transparent 9%),
+    linear-gradient(to top,     rgba(0,0,0,0.18) 0%, transparent 9%),
+    linear-gradient(to right,   rgba(0,0,0,0.14) 0%, transparent 7%),
+    linear-gradient(to left,    rgba(0,0,0,0.14) 0%, transparent 7%);
+"></div>
+
+<!-- Search bar wrapper (pill + cancel side by side) -->
+<div class="search-row" id="search-row">
+  <div class="map-search" id="map-search" onclick="activateSearch()">
+    <!-- Search icon -->
+    <svg class="map-search-icon" id="search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="6.5" cy="6.5" r="5" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+      <path d="M10 10L13.5 13.5" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <!-- Real input (hidden visually until active) -->
+    <input
+      class="search-input" id="search-input"
+      type="search" autocomplete="off" autocorrect="off" spellcheck="false"
+      placeholder="Search chargers…"
+      aria-label="Search charging stations"
+    />
+    <!-- Clear button (appears when text typed) -->
+    <button class="search-clear" id="search-clear" aria-label="Clear" onclick="clearSearch(event)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="6" fill="rgba(255,255,255,0.18)"/>
+        <path d="M4.5 4.5l5 5M9.5 4.5l-5 5" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <!-- Mic button -->
+    <button class="map-search-mic" id="search-mic" aria-label="Voice search" onclick="activateMic(event)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="4.5" y="1" width="5" height="7.5" rx="2.5" fill="rgba(255,255,255,0.85)"/>
+        <path d="M2 7.5C2 10.5376 4.46243 13 7.5 13C10.5376 13 13 10.5376 13 7.5" stroke="rgba(255,255,255,0.85)" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="7.5" y1="13" x2="7.5" y2="14" stroke="rgba(255,255,255,0.85)" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+  <!-- Cancel button — slides in from right -->
+  <button class="search-cancel" id="search-cancel" onclick="cancelSearch()">Cancel</button>
+</div>
+
+<!-- Apple Low Power Mode Alert — centered, used for mic & search errors -->
+<div class="lpm-scrim" id="lpm-scrim" onclick="closeLPM()">
+  <div class="lpm-alert" id="lpm-alert" onclick="event.stopPropagation()">
+
+    <div class="lpm-body">
+      <!-- Apple-style red X icon -->
+      <div class="lpm-battery">
+        <div class="lpm-x-circle">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4.5 4.5L13.5 13.5M13.5 4.5L4.5 13.5"
+              stroke="#ff3b30" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="lpm-title">Low Power Mode</div>
+      <div class="lpm-message">This feature is not available&#10;in your region.</div>
+    </div>
+
+    <div class="lpm-divider"></div>
+    <button class="lpm-btn" onclick="closeLPM()">OK</button>
+
+  </div>
+</div>
+
+<!-- GPS error toast -->
+<div class="gps-toast" id="gps-toast"></div>
+
+<!-- GPS my-location button -->
+<button class="map-btn-gps" id="btn-gps" aria-label="My location">
+  <!-- Arrow icon — SF Symbols "location" outline -->
+  <svg class="gps-btn-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <path d="M10 2L17.5 10L10 13.5L2.5 10L10 2Z" stroke="rgba(255,255,255,0.75)" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+    <path d="M10 13.5V18" stroke="rgba(255,255,255,0.75)" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <!-- 8-spoke mini spinner (shown while locating) -->
+  <div class="gps-btn-spinner">
+    <div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div>
+    <div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div>
+  </div>
+</button>
+
+<!-- Recenter -->
+<button class="map-btn-recenter" id="btn-recenter" aria-label="Recenter">
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+    <path d="M10 1.5C6.41 1.5 3.5 4.41 3.5 8C3.5 13 10 19 10 19s6.5-6 6.5-11C16.5 4.41 13.59 1.5 10 1.5zm0 9a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" fill="rgba(255,255,255,0.7)"/>
+  </svg>
+</button>
+
+<!-- Sheet -->
+<div class="sheet" id="sheet">
+  <div class="card">
+
+    <!-- Side vignettes -->
+    <div class="card-vignette-l"></div>
+    <div class="card-vignette-r"></div>
+
+    <!-- Handle -->
+    <div class="card-handle" id="sheet-handle">
+      <div class="card-handle-bar"></div>
+    </div>
+
+    <!-- ── iOS Activity Indicator ── -->
+    <div class="faceid-wrap" id="faceid-wrap">
+      <div class="loader-wheel">
+        <div class="s"></div><div class="s"></div><div class="s"></div>
+        <div class="s"></div><div class="s"></div><div class="s"></div>
+        <div class="s"></div><div class="s"></div><div class="s"></div>
+        <div class="s"></div><div class="s"></div><div class="s"></div>
+      </div>
+    </div>
+
+    <!-- ── Car image stage ── -->
+    <div class="car-stage">
+      <!--
+        ╔══════════════════════════════════════════════╗
+        ║  REPLACE src="" WITH YOUR CAR IMAGE PATH     ║
+        ║  e.g. src="tesla.png" or src="car.webp"      ║
+        ╚══════════════════════════════════════════════╝
+      -->
+      <img class="car-img" id="car-img" src="" alt="Your car" draggable="false"/>
+      <!-- Shown until image src is set -->
+      <div class="car-placeholder" id="car-placeholder">
+        <svg width="90" height="44" viewBox="0 0 90 44" fill="none" opacity="0.12">
+          <rect x="8" y="16" width="74" height="18" rx="5" fill="white"/>
+          <rect x="20" y="8" width="44" height="20" rx="5" fill="white"/>
+          <circle cx="22" cy="36" r="7" fill="white"/>
+          <circle cx="68" cy="36" r="7" fill="white"/>
+        </svg>
+      </div>
+      <div class="car-fade"></div>
+    </div>
+
+    <!-- Identity -->
+    <div class="card-identity" id="ci-identity">
+      <div>
+        <div class="card-name">Hamra Charging Hub</div>
+        <div class="card-addr">
+          <span>Hamra Street</span>
+          <div class="addr-dot"></div>
+          <span>Beirut</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card-line" id="ci-line"></div>
+
+    <div class="card-status" id="ci-status">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span class="status-txt">Available</span>
+      </div>
+      <span class="status-ports">2 of 4 ports free</span>
+    </div>
+
+    <div class="card-rows" id="ci-rows">
+      <div class="card-row">
+        <span class="row-label">Max power</span>
+        <span class="row-val blue">50 kW</span>
+      </div>
+      <div class="card-row">
+        <span class="row-label">Connector</span>
+        <span class="row-val">CCS2 · Type 2</span>
+      </div>
+      <div class="card-row">
+        <span class="row-label">Hours</span>
+        <span class="row-val">24 / 7</span>
+      </div>
+      <div class="card-row">
+        <span class="row-label">Price</span>
+        <span class="row-val green">Free</span>
+      </div>
+    </div>
+
+    <div class="card-cta" id="ci-cta">
+      <button class="btn-directions" onclick="openDirections()">
+        <!--
+          ╔══════════════════════════════════════════╗
+          ║  REPLACE src="" WITH YOUR BUTTON IMAGE   ║
+          ║  e.g. src="directions.png"               ║
+          ╚══════════════════════════════════════════╝
+        -->
+        <img class="btn-directions-img" id="btn-directions-img" src="" alt="Get Directions" draggable="false"/>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════
+   MAP
+══════════════════════════════════════════════════════ */
+const BEIRUT  = [33.8886, 35.4955];
+const LEBANON = [33.8547, 35.8623];
+
+const map = L.map('map', {
+  center: BEIRUT, zoom: 15,
+  zoomControl: false, attributionControl: false, preferCanvas: true,
+});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+  maxZoom:19, subdomains:'abcd', keepBuffer:4,
+  updateWhenIdle:false, updateWhenZooming:false,
+}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+  maxZoom:19, subdomains:'abcd', keepBuffer:4,
+  updateWhenIdle:false, updateWhenZooming:false, pane:'shadowPane',
+}).addTo(map);
+
+/* ══════════════════════════════════════════════════════
+   PIN
+══════════════════════════════════════════════════════ */
+const pinHtml = `
+  <div class="dest-pin" id="dest-pin">
+    <div class="dest-pin-ping"></div>
+    <div class="dest-pin-body"></div>
+    <div class="dest-pin-ring"></div>
+    <div class="dest-pin-inner"></div>
+    <svg class="dest-pin-bolt" viewBox="0 0 9 12" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5.8 0.5L1.5 6.5H4.8L3 11.5L8 5H4.7L5.8 0.5Z" fill="#0a84ff"/>
+    </svg>
+    <div class="dest-pin-tip"></div>
+    <div class="dest-pin-shadow"></div>
+  </div>`;
+
+const pinIcon = L.divIcon({ html:pinHtml, className:'', iconSize:[22,31], iconAnchor:[11,31] });
+const marker  = L.marker(BEIRUT, { icon:pinIcon, interactive:true, keyboard:false }).addTo(map);
+
+/* ══════════════════════════════════════════════════════
+   SHEET + FACE-ID SEQUENCE
+══════════════════════════════════════════════════════ */
+const sheet      = document.getElementById('sheet');
+const handle     = document.getElementById('sheet-handle');
+const faceidWrap = document.getElementById('faceid-wrap');
+const carImg     = document.getElementById('car-img');
+const carPH      = document.getElementById('car-placeholder');
+
+let isOpen = false, startY = 0, dragY = 0, dragging = false;
+let faceTimer1, faceTimer2, faceTimer3, faceTimer4;
+
+const revealIds = ['ci-identity','ci-line','ci-status','ci-rows','ci-cta'];
+
+function revealContent() {
+  revealIds.forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('reveal');
+    }, i * 60);
+  });
+  if (carImg.src && carImg.src !== window.location.href) {
+    carPH.style.display = 'none';
+    carImg.classList.add('visible');
+  }
+}
+
+function runFaceId() {
+  faceidWrap.classList.remove('done','success');
+  revealIds.forEach(id => document.getElementById(id)?.classList.remove('reveal'));
+
+  // Spinner runs for 1400ms, then overlay fades out and content reveals
+  faceTimer1 = setTimeout(() => {
+    faceidWrap.classList.add('done');
+    revealContent();
+  }, 1400);
+}
+
+function openSheet() {
+  if (isOpen) return;
+  const pin = document.getElementById('dest-pin');
+  if (pin) { pin.classList.add('tapped'); setTimeout(()=>pin.classList.remove('tapped'), 280); }
+
+  // Fly to station
+  map.flyTo(BEIRUT, 17, { animate:true, duration:0.88, easeLinearity:0.16 });
+
+  isOpen = true;
+  sheet.classList.add('open');
+
+  // Start Face ID sequence
+  runFaceId();
+}
+
+function closeSheet() {
+  clearTimeout(faceTimer1); clearTimeout(faceTimer2); clearTimeout(faceTimer3); clearTimeout(faceTimer4);
+  isOpen = false;
+  sheet.classList.remove('open');
+  sheet.style.transform = '';
+  sheet.classList.remove('dragging');
+}
+
+/* Swipe to dismiss */
+function dragStart(e) {
+  if (!isOpen) return;
+  dragging = true; dragY = 0;
+  startY = (e.touches ? e.touches[0] : e).clientY;
+  sheet.classList.add('dragging');
+}
+function dragMove(e) {
+  if (!dragging) return;
+  const y = (e.touches ? e.touches[0] : e).clientY;
+  dragY = Math.max(0, y - startY);
+  sheet.style.transform = `translateX(-50%) translateY(${dragY}px)`;
+}
+function dragEnd() {
+  if (!dragging) return;
+  dragging = false;
+  sheet.classList.remove('dragging');
+  if (dragY > 80) {
+    closeSheet();
+  } else {
+    sheet.style.transform = '';
+    sheet.style.transition = 'transform 0.46s cubic-bezier(0.32,0.72,0,1)';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ sheet.style.transition=''; }));
+  }
+  dragY = 0;
+}
+
+handle.addEventListener('mousedown',   dragStart);
+handle.addEventListener('touchstart',  dragStart, { passive:true });
+document.addEventListener('mousemove', dragMove);
+document.addEventListener('touchmove', dragMove, { passive:true });
+document.addEventListener('mouseup',   dragEnd);
+document.addEventListener('touchend',  dragEnd);
+
+marker.on('click',      openSheet);
+marker.on('touchstart', openSheet);
+
+map.on('click', ()=>{ if (isOpen) closeSheet(); });
+
+document.getElementById('btn-recenter').addEventListener('click', ()=>{
+  if (isOpen) closeSheet();
+  const b = document.getElementById('btn-recenter');
+  b.classList.add('spinning');
+  setTimeout(()=>b.classList.remove('spinning'), 620);
+  map.flyTo(LEBANON, 8, { animate:true, duration:1.7, easeLinearity:0.2 });
+});
+
+function openDirections() {
+  window.open('https://www.google.com/maps/dir/?api=1&destination=33.8886,35.4955','_blank');
+}
+
+/* ══════════════════════════════════════════════════════
+   SEARCH BAR — Apple Maps style
+══════════════════════════════════════════════════════ */
+const searchRow   = document.getElementById('search-row');
+const searchPill  = document.getElementById('map-search');
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+const searchMic   = document.getElementById('search-mic');
+
+let searchActive = false;
+
+function activateSearch() {
+  if (searchActive) return;
+  searchActive = true;
+  searchRow.classList.add('active');
+  searchPill.classList.add('active');
+  // Short delay so the pill expands before keyboard pops
+  setTimeout(() => searchInput.focus(), 80);
+}
+
+function cancelSearch() {
+  searchActive = false;
+  searchInput.blur();
+  searchInput.value = '';
+  searchRow.classList.remove('active');
+  searchPill.classList.remove('active');
+  searchClear.classList.remove('visible');
+}
+
+function clearSearch(e) {
+  e.stopPropagation();
+  searchInput.value = '';
+  searchInput.focus();
+  searchClear.classList.remove('visible');
+}
+
+searchInput.addEventListener('focus', activateSearch);
+
+searchInput.addEventListener('input', () => {
+  if (searchInput.value.length > 0) {
+    searchClear.classList.add('visible');
+  } else {
+    searchClear.classList.remove('visible');
+  }
+  // mic always stays visible
+});
+
+searchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { cancelSearch(); return; }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    showSearchError();
+  }
+});
+
+/* ══════════════════════════════════════════════════════
+   VOICE / MIC — Siri-style overlay
+══════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   LOW POWER MODE ALERT — shared by mic + search Enter
+══════════════════════════════════════════════════════ */
+const lpmScrim = document.getElementById('lpm-scrim');
+
+function showLPM() {
+  lpmScrim.classList.add('active');
+}
+
+function closeLPM() {
+  lpmScrim.classList.remove('active');
+}
+
+/* Mic tap → LPM alert */
+function activateMic(e) {
+  e.stopPropagation();
+  cancelSearch();
+  showLPM();
+}
+
+/* Search Enter → LPM alert */
+function showSearchError() {
+  searchInput.blur();
+  cancelSearch();
+  showLPM();
+}
+
+/* ══════════════════════════════════════════════════════
+   GPS — Apple Maps style, fully working
+   ─────────────────────────────────────────────────────
+   Why on-tap not on-load:
+   • iOS Safari silently denies geolocation on page load
+     unless the page is already trusted. A user gesture
+     (button tap) guarantees the permission prompt fires.
+   • Android Chrome allows on-load but still benefits
+     from explicit user intent.
+
+   States on #btn-gps:
+     (default)     → idle, outline arrow
+     .gps-locating → 8-spoke mini spinner
+     .gps-active   → filled blue arrow, centering on tap
+
+   The recenter button (Lebanon flyover) stays untouched.
+══════════════════════════════════════════════════════ */
+const btnGps = document.getElementById('btn-gps');
+
+let gpsMarker    = null;
+let gpsCircle    = null;
+let gpsWatchId   = null;
+let userHeading  = null;
+let gpsHasFirst  = false;   // true after first valid fix
+let gpsPulseEl   = null;    // reference to pulse div so we can stop it
+
+/* ── Marker HTML builder ── */
+function buildGpsDot(heading) {
+  /* Cone only if we have a real heading */
+  const cone = (heading !== null && !isNaN(heading))
+    ? `<div class="gps-heading" style="transform:rotate(${heading}deg)"></div>`
+    : '';
+  return `<div class="gps-wrap">
+    <div class="gps-pulse" id="gps-pulse"></div>
+    ${cone}
+    <div class="gps-ring"></div>
+    <div class="gps-dot"></div>
+  </div>`;
+}
+
+function makeGpsIcon(heading) {
+  return L.divIcon({
+    html: buildGpsDot(heading),
+    className: '',
+    iconSize:   [22, 22],
+    iconAnchor: [11, 11],
+  });
+}
+
+/* ── Toast ── */
+let toastTimer = null;
+function showGpsToast(msg, duration) {
+  const t = document.getElementById('gps-toast');
+  clearTimeout(toastTimer);
+  t.textContent = msg;
+  t.classList.add('show');
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration || 3500);
+}
+function hideGpsToast() {
+  const t = document.getElementById('gps-toast');
+  clearTimeout(toastTimer);
+  t.classList.remove('show');
+}
+
+/* ── Button states ── */
+function setBtnLocating() {
+  btnGps.classList.remove('gps-active');
+  btnGps.classList.add('gps-locating');
+}
+function setBtnActive() {
+  btnGps.classList.remove('gps-locating');
+  btnGps.classList.add('gps-active');
+}
+function setBtnIdle() {
+  btnGps.classList.remove('gps-locating','gps-active');
+}
+
+/* ── Position handler ── */
+function onGpsPosition(pos) {
+  hideGpsToast();
+  const { latitude: lat, longitude: lng, accuracy, heading } = pos.coords;
+  const latlng = [lat, lng];
+
+  /* Update heading from GPS coords.heading (movement heading) */
+  if (heading !== null && !isNaN(heading)) {
+    userHeading = heading;
+  }
+
+  if (!gpsMarker) {
+    /* ── First fix ── */
+    gpsHasFirst = true;
+
+    /* Accuracy ring */
+    gpsCircle = L.circle(latlng, {
+      radius:      accuracy,
+      color:       '#0a84ff',
+      fillColor:   '#0a84ff',
+      fillOpacity: 0.08,
+      weight:      0.5,
+      interactive: false,
+      pane:        'shadowPane',
+    }).addTo(map);
+
+    /* Dot marker */
+    gpsMarker = L.marker(latlng, {
+      icon:          makeGpsIcon(userHeading),
+      interactive:   false,
+      keyboard:      false,
+      zIndexOffset: -50,
+    }).addTo(map);
+
+    /* Keep station pin on top */
+    marker.setZIndexOffset(200);
+
+    /* Fly to user on first fix */
+    map.flyTo(latlng, 16, { animate: true, duration: 1.1, easeLinearity: 0.22 });
+
+    setBtnActive();
+
+    /* Stop pulse after 4 s (signal settled) */
+    setTimeout(() => {
+      const el = document.getElementById('gps-pulse');
+      if (el) el.classList.add('done');
+    }, 4000);
+
+  } else {
+    /* ── Subsequent fix — smooth update ── */
+    gpsMarker.setLatLng(latlng);
+    gpsMarker.setIcon(makeGpsIcon(userHeading));
+    gpsCircle.setLatLng(latlng);
+    gpsCircle.setRadius(accuracy);
+    setBtnActive();
+  }
+}
+
+/* ── Error handler ── */
+function onGpsError(err) {
+  setBtnIdle();
+  const msgs = {
+    1: 'Location access denied. Enable in Settings.',
+    2: 'Unable to determine your location.',
+    3: 'Location request timed out. Try again.',
+  };
+  showGpsToast(msgs[err.code] || 'Location unavailable.', 4500);
+}
+
+/* ── Heading from device compass ── */
+function startCompass() {
+  const handler = (e) => {
+    /* iOS: webkitCompassHeading; Android absolute: 360 - alpha */
+    const h = e.webkitCompassHeading != null
+      ? e.webkitCompassHeading
+      : (e.absolute && e.alpha != null ? (360 - e.alpha) % 360 : null);
+    if (h !== null) {
+      userHeading = h;
+      if (gpsMarker) gpsMarker.setIcon(makeGpsIcon(h));
+    }
+  };
+
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    /* iOS 13+ — must be inside a user gesture; call from btnGps handler */
+    window._iosOrientationHandler = handler;
+  } else {
+    /* Android / Desktop */
+    window.addEventListener('deviceorientationabsolute', handler, true);
+    window.addEventListener('deviceorientation',         handler, true);
+  }
+}
+
+/* ── Main GPS start — always triggered by button tap ── */
+function requestLocation() {
+  if (!navigator.geolocation) {
+    showGpsToast('Your browser does not support GPS.');
+    return;
+  }
+
+  /* If already active → re-centre on user */
+  if (gpsHasFirst && gpsMarker) {
+    const ll = gpsMarker.getLatLng();
+    map.flyTo(ll, 16, { animate: true, duration: 0.9, easeLinearity: 0.2 });
+    return;
+  }
+
+  setBtnLocating();
+  showGpsToast('Locating…', 15000);
+
+  const opts = { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 };
+
+  /* One immediate fix */
+  navigator.geolocation.getCurrentPosition(onGpsPosition, onGpsError, opts);
+
+  /* Continuous watch */
+  if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+  gpsWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, opts);
+
+  /* iOS 13+ compass — request inside this gesture */
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(state => {
+        if (state === 'granted' && window._iosOrientationHandler) {
+          window.addEventListener('deviceorientationabsolute', window._iosOrientationHandler, true);
+          window.addEventListener('deviceorientation',         window._iosOrientationHandler, true);
+        }
+      })
+      .catch(() => {});
+  }
+}
+
+btnGps.addEventListener('click', requestLocation);
+
+/* Init compass listener (non-iOS) */
+startCompass();
+
+// Keep these stubs so nothing breaks
+function showVoice() { showLPM(); }
+function stopVoice()  { closeLPM(); }
+</script>
