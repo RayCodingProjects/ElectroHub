@@ -356,20 +356,6 @@
       will-change:opacity;
     }
 
-    /* Rotation: spoke n sits at n×30° */
-    .s:nth-child(1) {transform:rotate(  0deg);animation-delay: 0s}
-    .s:nth-child(2) {transform:rotate( 30deg);animation-delay:-1.1s}
-    .s:nth-child(3) {transform:rotate( 60deg);animation-delay:-1.0s}
-    .s:nth-child(4) {transform:rotate( 90deg);animation-delay:-0.9s}
-    .s:nth-child(5) {transform:rotate(120deg);animation-delay:-0.8s}
-    .s:nth-child(6) {transform:rotate(150deg);animation-delay:-0.7s}
-    .s:nth-child(7) {transform:rotate(180deg);animation-delay:-0.6s}
-    .s:nth-child(8) {transform:rotate(210deg);animation-delay:-0.5s}
-    .s:nth-child(9) {transform:rotate(240deg);animation-delay:-0.4s}
-    .s:nth-child(10){transform:rotate(270deg);animation-delay:-0.3s}
-    .s:nth-child(11){transform:rotate(300deg);animation-delay:-0.2s}
-    .s:nth-child(12){transform:rotate(330deg);animation-delay:-0.1s}
-
     /*
       Full opacity at t=0, linearly decaying to the dim floor by t=100%.
       This matches exactly how UIKit renders it — no ease curves on opacity,
@@ -554,34 +540,6 @@
     /* Arrow icon — changes colour via CSS class */
     .gps-btn-arrow{transition:opacity 0.2s}
     .map-btn-gps.gps-active .gps-btn-arrow path{fill:#0a84ff}
-
-    /* Locating spinner — 8-spoke mini wheel inside button */
-    .gps-btn-spinner{
-      position:absolute;
-      width:20px;height:20px;
-      display:none;
-    }
-    .map-btn-gps.gps-locating .gps-btn-arrow{opacity:0}
-    .map-btn-gps.gps-locating .gps-btn-spinner{display:block}
-
-    .gps-btn-spinner .ss{
-      position:absolute;
-      top:50%;left:50%;
-      width:2px;height:6px;
-      margin-top:-3px;margin-left:-1px;
-      border-radius:1px;
-      background:#fff;
-      transform-origin:50% -5px;
-      opacity:0.12;
-    }
-    .ss:nth-child(1){transform:rotate(  0deg);animation-delay:  0s}
-    .ss:nth-child(2){transform:rotate( 45deg);animation-delay:-0.875s}
-    .ss:nth-child(3){transform:rotate( 90deg);animation-delay:-0.750s}
-    .ss:nth-child(4){transform:rotate(135deg);animation-delay:-0.625s}
-    .ss:nth-child(5){transform:rotate(180deg);animation-delay:-0.500s}
-    .ss:nth-child(6){transform:rotate(225deg);animation-delay:-0.375s}
-    .ss:nth-child(7){transform:rotate(270deg);animation-delay:-0.250s}
-    .ss:nth-child(8){transform:rotate(315deg);animation-delay:-0.125s}
 
     /* ══════════════════════════════════
        GPS USER LOCATION DOT — reworked
@@ -845,10 +803,6 @@
     <path d="M10 13.5V18" stroke="rgba(255,255,255,0.75)" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
   <!-- 8-spoke mini spinner (shown while locating) -->
-  <div class="gps-btn-spinner">
-    <div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div>
-    <div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div>
-  </div>
 </button>
 
 <!-- My-location widget (slides up when GPS dot is tapped) -->
