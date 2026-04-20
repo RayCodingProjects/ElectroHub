@@ -556,6 +556,32 @@
     .map-btn-gps.gps-active .gps-btn-arrow path{fill:#0a84ff}
 
     /* Locating spinner — 8-spoke mini wheel inside button */
+    .gps-btn-spinner{
+      position:absolute;
+      width:20px;height:20px;
+      display:none;
+    }
+    .map-btn-gps.gps-locating .gps-btn-arrow{opacity:0}
+    .map-btn-gps.gps-locating .gps-btn-spinner{display:block}
+
+    .gps-btn-spinner .ss{
+      position:absolute;
+      top:50%;left:50%;
+      width:2px;height:6px;
+      margin-top:-3px;margin-left:-1px;
+      border-radius:1px;
+      background:#fff;
+      transform-origin:50% -5px;
+      opacity:0.12;
+    }
+    .ss:nth-child(1){transform:rotate(  0deg);animation-delay:  0s}
+    .ss:nth-child(2){transform:rotate( 45deg);animation-delay:-0.875s}
+    .ss:nth-child(3){transform:rotate( 90deg);animation-delay:-0.750s}
+    .ss:nth-child(4){transform:rotate(135deg);animation-delay:-0.625s}
+    .ss:nth-child(5){transform:rotate(180deg);animation-delay:-0.500s}
+    .ss:nth-child(6){transform:rotate(225deg);animation-delay:-0.375s}
+    .ss:nth-child(7){transform:rotate(270deg);animation-delay:-0.250s}
+    .ss:nth-child(8){transform:rotate(315deg);animation-delay:-0.125s}
 
     /* ══════════════════════════════════
        GPS USER LOCATION DOT — reworked
@@ -612,6 +638,97 @@
     @keyframes gps-halo{
       0%  {transform:scale(1);opacity:0.7}
       100%{transform:scale(3.5);opacity:0}
+    }
+
+    /* ══════════════════════════════════
+       MY-LOCATION WIDGET
+       Slides up when GPS dot is tapped.
+       Mirrors the charge-station card style.
+    ══════════════════════════════════ */
+    .loc-sheet{
+      position:fixed;
+      bottom:max(env(safe-area-inset-bottom,20px),20px);
+      left:50%;
+      transform:translateX(-50%) translateY(calc(100% + 64px));
+      width:min(375px,calc(100vw - 20px));
+      z-index:850;
+      transition:transform 0.52s cubic-bezier(0.32,0.72,0,1);
+      will-change:transform;
+      pointer-events:none;
+    }
+    .loc-sheet.open{transform:translateX(-50%) translateY(0);pointer-events:all}
+    .loc-sheet.dragging{transition:none}
+
+    .loc-card{
+      background:rgba(13,13,15,0.97);
+      backdrop-filter:saturate(220%) blur(56px);
+      -webkit-backdrop-filter:saturate(220%) blur(56px);
+      border-radius:24px;
+      border:0.5px solid rgba(255,255,255,0.11);
+      box-shadow:0 0 0 0.5px rgba(255,255,255,0.05) inset,0 28px 72px rgba(0,0,0,0.9),0 6px 20px rgba(0,0,0,0.7);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .loc-handle{
+      display:flex;justify-content:center;padding:10px 0 4px;cursor:grab;z-index:60;position:relative;
+    }
+    .loc-handle:active{cursor:grabbing}
+    .loc-handle-bar{
+      width:32px;height:4px;border-radius:2.5px;
+      background:rgba(255,255,255,0.16);
+      transition:width 0.22s cubic-bezier(0.22,1,0.36,1),background 0.2s;
+    }
+    .loc-handle:hover .loc-handle-bar{width:44px;background:rgba(255,255,255,0.28)}
+
+    .loc-body{
+      display:flex;align-items:center;gap:14px;
+      padding:10px 18px 18px;
+      opacity:0;transform:translateY(7px);
+      transition:opacity 0.3s ease 0.06s,transform 0.38s cubic-bezier(0.22,1,0.36,1) 0.06s;
+    }
+    .loc-sheet.open .loc-body{opacity:1;transform:translateY(0)}
+
+    /* Blue GPS puck (static copy) */
+    .loc-puck{
+      width:36px;height:36px;border-radius:50%;flex-shrink:0;
+      background:rgba(10,132,255,0.14);
+      border:0.5px solid rgba(10,132,255,0.3);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .loc-puck svg{display:block}
+
+    .loc-text{flex:1;min-width:0}
+    .loc-title{
+      font-size:15px;font-weight:600;color:#fff;
+      letter-spacing:-0.35px;line-height:1.25;
+    }
+    .loc-subtitle{
+      font-size:12px;color:rgba(255,255,255,0.38);
+      margin-top:2px;letter-spacing:-0.1px;
+    }
+
+    /* ── Nearest station banner ── */
+    .nearest-banner{
+      position:fixed;
+      bottom:max(env(safe-area-inset-bottom,20px),20px);
+      left:50%;
+      transform:translateX(-50%) translateY(16px);
+      z-index:1400;
+      display:flex;align-items:center;gap:10px;
+      padding:11px 18px;
+      background:rgba(10,132,255,0.92);
+      backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+      border-radius:14px;
+      border:0.5px solid rgba(255,255,255,0.18);
+      box-shadow:0 6px 24px rgba(10,132,255,0.45),0 2px 8px rgba(0,0,0,0.5);
+      font-size:13px;font-weight:600;color:#fff;letter-spacing:-0.1px;
+      white-space:nowrap;
+      opacity:0;pointer-events:none;
+      transition:opacity 0.3s cubic-bezier(0.22,1,0.36,1),transform 0.38s cubic-bezier(0.22,1,0.36,1);
+    }
+    .nearest-banner.show{
+      opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all;
     }
 
     /* GPS error / status toast */
@@ -728,7 +845,41 @@
     <path d="M10 13.5V18" stroke="rgba(255,255,255,0.75)" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
   <!-- 8-spoke mini spinner (shown while locating) -->
+  <div class="gps-btn-spinner">
+    <div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div>
+    <div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div>
+  </div>
 </button>
+
+<!-- My-location widget (slides up when GPS dot is tapped) -->
+<div class="loc-sheet" id="loc-sheet">
+  <div class="loc-card">
+    <div class="loc-handle" id="loc-handle">
+      <div class="loc-handle-bar"></div>
+    </div>
+    <div class="loc-body">
+      <div class="loc-puck">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2L17.5 10L10 13.5L2.5 10L10 2Z" fill="#0a84ff"/>
+          <path d="M10 13.5V18" stroke="#0a84ff" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="loc-text">
+        <div class="loc-title" id="loc-title">My Location</div>
+        <div class="loc-subtitle" id="loc-subtitle">Tap twice to find nearest charger</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nearest station banner -->
+<div class="nearest-banner" id="nearest-banner">
+  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+    <path d="M10 2L17.5 10L10 13.5L2.5 10L10 2Z" fill="white"/>
+    <path d="M10 13.5V18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+  </svg>
+  <span id="nearest-text">Nearest station: 0.4 km away</span>
+</div>
 
 <!-- Recenter -->
 <button class="map-btn-recenter" id="btn-recenter" aria-label="Recenter">
@@ -805,18 +956,6 @@
     </div>
 
     <div class="card-rows" id="ci-rows">
-      <div class="card-row">
-        <span class="row-label">Max power</span>
-        <span class="row-val blue">50 kW</span>
-      </div>
-      <div class="card-row">
-        <span class="row-label">Connector</span>
-        <span class="row-val">CCS2 · Type 2</span>
-      </div>
-      <div class="card-row">
-        <span class="row-label">Hours</span>
-        <span class="row-val">24 / 7</span>
-      </div>
       <div class="card-row">
         <span class="row-label">Price</span>
         <span class="row-val green">Free</span>
@@ -1181,7 +1320,7 @@ function onGpsPosition(pos) {
     /* Dot marker */
     gpsMarker = L.marker(latlng, {
       icon:          makeGpsIcon(userHeading),
-      interactive:   false,
+      interactive:   true,
       keyboard:      false,
       zIndexOffset: -50,
     }).addTo(map);
@@ -1189,10 +1328,19 @@ function onGpsPosition(pos) {
     /* Keep station pin on top */
     marker.setZIndexOffset(200);
 
+    /* Tap GPS dot → open loc widget */
+    gpsMarker.on('click', () => {
+      const ll = gpsMarker.getLatLng();
+      openLocSheet(ll.lat, ll.lng, gpsCircle ? gpsCircle.getRadius() : 20);
+    });
+
     /* Fly to user on first fix */
     map.flyTo(latlng, 16, { animate: true, duration: 1.1, easeLinearity: 0.22 });
 
     setBtnActive();
+
+    /* Open the my-location widget */
+    openLocSheet(lat, lng, accuracy);
 
     /* Stop pulse after 4 s (signal settled) */
     setTimeout(() => {
@@ -1245,6 +1393,99 @@ function startCompass() {
   }
 }
 
+/* ── Location widget ── */
+const locSheet   = document.getElementById('loc-sheet');
+const locHandle  = document.getElementById('loc-handle');
+const locTitle   = document.getElementById('loc-title');
+const locSubtitle = document.getElementById('loc-subtitle');
+const nearestBanner = document.getElementById('nearest-banner');
+const nearestText   = document.getElementById('nearest-text');
+let locSheetOpen = false, locDragY = 0, locStartY = 0, locDragging = false;
+
+/* Charging station data — coordinates for nearest-station calc */
+const STATIONS = [
+  { name:'Hamra Charging Hub',    latlng:[33.8886,35.4955], dist:null },
+  { name:'ABC Dbayeh EV Station', latlng:[33.9150,35.5805], dist:null },
+  { name:'Jounieh Marina Charge', latlng:[33.9802,35.6141], dist:null },
+  { name:'Verdun EV Point',       latlng:[33.8820,35.4862], dist:null },
+  { name:'Mar Mikhael Charge',    latlng:[33.8914,35.5125], dist:null },
+  { name:'Byblos Charge',         latlng:[34.1220,35.6513], dist:null },
+  { name:'Tripoli North Hub',     latlng:[34.4368,35.8360], dist:null },
+];
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function findNearest(userLat, userLng) {
+  let best = null, bestDist = Infinity;
+  STATIONS.forEach(s => {
+    const d = haversineKm(userLat, userLng, s.latlng[0], s.latlng[1]);
+    if (d < bestDist) { bestDist = d; best = s; }
+  });
+  return { station: best, km: bestDist };
+}
+
+function openLocSheet(lat, lng, acc) {
+  locTitle.textContent = 'My Location';
+  locSubtitle.textContent = acc < 50
+    ? `±${Math.round(acc)} m accuracy · tap again to find charger`
+    : 'Tap again to find nearest charger';
+  locSheetOpen = true;
+  locSheet.classList.add('open');
+}
+
+function closeLocSheet() {
+  locSheetOpen = false;
+  locSheet.classList.remove('open');
+  locSheet.style.transform = '';
+}
+
+/* Loc sheet drag */
+function locDragStart(e) {
+  if (!locSheetOpen) return;
+  locDragging = true; locDragY = 0;
+  locStartY = (e.touches ? e.touches[0] : e).clientY;
+  locSheet.classList.add('dragging');
+}
+function locDragMove(e) {
+  if (!locDragging) return;
+  const y = (e.touches ? e.touches[0] : e).clientY;
+  locDragY = Math.max(0, y - locStartY);
+  locSheet.style.transform = `translateX(-50%) translateY(${locDragY}px)`;
+}
+function locDragEnd() {
+  if (!locDragging) return;
+  locDragging = false; locSheet.classList.remove('dragging');
+  if (locDragY > 70) { closeLocSheet(); }
+  else {
+    locSheet.style.transform = '';
+    locSheet.style.transition = 'transform 0.46s cubic-bezier(0.32,0.72,0,1)';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ locSheet.style.transition=''; }));
+  }
+  locDragY = 0;
+}
+locHandle.addEventListener('mousedown',   locDragStart);
+locHandle.addEventListener('touchstart',  locDragStart, { passive:true });
+document.addEventListener('mousemove',    locDragMove);
+document.addEventListener('touchmove',    locDragMove,  { passive:true });
+document.addEventListener('mouseup',      locDragEnd);
+document.addEventListener('touchend',     locDragEnd);
+
+/* Nearest banner auto-hide */
+let nearestTimer = null;
+function showNearestBanner(text) {
+  nearestText.textContent = text;
+  nearestBanner.classList.add('show');
+  clearTimeout(nearestTimer);
+  nearestTimer = setTimeout(() => nearestBanner.classList.remove('show'), 5000);
+}
+
+/* ── Double-tap detection ── */
+let gpsTapCount = 0, gpsTapTimer = null;
+
 /* ── Main GPS start — always triggered by button tap ── */
 function requestLocation() {
   if (!navigator.geolocation) {
@@ -1252,10 +1493,30 @@ function requestLocation() {
     return;
   }
 
-  /* If already active → re-centre on user */
+  /* Double-tap = find nearest station */
+  gpsTapCount++;
+  clearTimeout(gpsTapTimer);
+  gpsTapTimer = setTimeout(() => { gpsTapCount = 0; }, 400);
+
+  if (gpsTapCount >= 2 && gpsHasFirst && gpsMarker) {
+    gpsTapCount = 0;
+    const ll = gpsMarker.getLatLng();
+    const { station, km } = findNearest(ll.lat, ll.lng);
+    if (station) {
+      closeLocSheet();
+      const distStr = km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
+      showNearestBanner(`⚡ Nearest: ${station.name} — ${distStr}`);
+      /* Fly to the nearest station */
+      map.flyTo(station.latlng, 15, { animate:true, duration:1.2, easeLinearity:0.2 });
+    }
+    return;
+  }
+
+  /* If already active → re-centre + open widget */
   if (gpsHasFirst && gpsMarker) {
     const ll = gpsMarker.getLatLng();
     map.flyTo(ll, 16, { animate: true, duration: 0.9, easeLinearity: 0.2 });
+    openLocSheet(ll.lat, ll.lng, gpsCircle ? gpsCircle.getRadius() : 20);
     return;
   }
 
@@ -1264,14 +1525,11 @@ function requestLocation() {
 
   const opts = { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 };
 
-  /* One immediate fix */
   navigator.geolocation.getCurrentPosition(onGpsPosition, onGpsError, opts);
 
-  /* Continuous watch */
   if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
   gpsWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, opts);
 
-  /* iOS 13+ compass — request inside this gesture */
   if (typeof DeviceOrientationEvent !== 'undefined' &&
       typeof DeviceOrientationEvent.requestPermission === 'function') {
     DeviceOrientationEvent.requestPermission()
